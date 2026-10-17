@@ -5,7 +5,7 @@ tam, gdzie wiersz nie powinien się złamać — po sierotach („i w domu”), 
 liczbą a jednostką, po skrótach, przy przepisach, inicjałach, datach
 i przed spacjowaną pauzą.
 
-TypeScript, ESM, zero zależności w runtime, Node ≥ 22 i każda współczesna
+TypeScript, ESM, zero zależności w runtime, Node ≥ 22.12 i każda współczesna
 przeglądarka. Kod **nie używa lookbehind** (`(?<=…)` rzuca przy parsowaniu na
 Safari < 16.4 i kładzie cały bundel) — test `src/source.test.ts` tego pilnuje.
 
@@ -114,6 +114,8 @@ zachowania `hardSpaces` lub listy `ORPHANS_PL` to wersja główna.
 
 ## Zmiany
 
+- **2.0.1** — `exports` z warunkiem `default`: paczkę da się wczytać także przez
+  `require()` (Node ≥ 22.12), np. w loaderach testów kompilujących do CommonJS.
 - **2.0.0** — `ORPHANS_PL` rozszerzona z 23 do 46 słów (pod, nad, przy, przez,
   albo, to, co, jak, się, ani, są, jest, aby, już, też, tam, tu, aż, bo, no,
   niż, gdy, iż). Domyślne `hardSpaces` wiąże więcej, stąd wersja główna.

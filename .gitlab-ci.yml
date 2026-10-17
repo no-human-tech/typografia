@@ -53,6 +53,8 @@ build:
     - tar -tzf no-human-typografia-*.tgz | tee pliki.txt
     - "! grep -E '\\.test\\.|src/' pliki.txt"
     - node -e "import('./dist/index.js').then(m => { if (m.hardSpaces('i w domu') !== 'i\u00A0w\u00A0domu') process.exit(1) })"
+    # require() (loadery testów kompilujące do CJS) — Node ≥ 22.12 ładuje ESM przez warunek `default`.
+    - node -e "if (require('@no-human/typografia').hardSpaces('i w domu') !== 'i\u00A0w\u00A0domu') process.exit(1)"
   artifacts:
     paths: [no-human-typografia-*.tgz]
     expire_in: 1 week

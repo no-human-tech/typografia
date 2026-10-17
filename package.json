@@ -1,6 +1,6 @@
 {
   "name": "@no-human/typografia",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Polska typografia: twarde spacje po sierotach, przy liczbach z jednostkami, skrótach, inicjałach, datach i półpauzach",
   "type": "module",
   "license": "MIT",
@@ -10,13 +10,14 @@
     "url": "git+https://github.com/no-human-tech/typografia.git"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
