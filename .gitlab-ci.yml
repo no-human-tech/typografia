@@ -1,0 +1,79 @@
+# Potok @no-human/typografia (biblioteka npm, bez obrazów i wdrożeń).
+#
+# kontrola — lint, typecheck, testy, budowa paczki (npm pack) na MR, main i tagach v*
+# publikacja — `npm publish` do publicznego npmjs.com, tylko z tagu vX.Y.Z, ręcznie.
+#              Token: zmienna projektu NPM_TOKEN (masked + protected; tagi v* chronione).
+#
+# Obraz (NODE_OBRAZ), tag runnera (RUNNER_TAG) i lista ZAKAZANE_NAZWY (test
+# neutralności, src/neutral.test.ts) to zmienne projektu w GitLabie.
+
+stages:
+  - kontrola
+  - publikacja
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+    - when: never
+
+.node:
+  image: $NODE_OBRAZ
+  tags: [$RUNNER_TAG]
+  interruptible: true
+  before_script:
+    - npm ci --no-audit --no-fund
+
+lint:
+  extends: .node
+  stage: kontrola
+  script:
+    - npm run lint
+
+typecheck:
+  extends: .node
+  stage: kontrola
+  script:
+    - npm run typecheck
+
+test:
+  extends: .node
+  stage: kontrola
+  script:
+    - npm test
+
+build:
+  extends: .node
+  stage: kontrola
+  script:
+    - npm run build
+    - npm pack
+    # Paczka nie może nieść testów ani źródeł; musi się ładować jako ESM.
+    - tar -tzf no-human-typografia-*.tgz | tee pliki.txt
+    - "! grep -E '\\.test\\.|src/' pliki.txt"
+    - node -e "import('./dist/index.js').then(m => { if (m.hardSpaces('i w domu') !== 'i\u00A0w\u00A0domu') process.exit(1) })"
+  artifacts:
+    paths: [no-human-typografia-*.tgz]
+    expire_in: 1 week
+
+publikacja:
+  extends: .node
+  stage: publikacja
+  needs: [lint, typecheck, test, build]
+  interruptible: false
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+      when: manual
+    - when: never
+  script:
+    - |
+      if [ -z "${NPM_TOKEN:-}" ]; then
+        echo "Brak zmiennej NPM_TOKEN (Settings -> CI/CD -> Variables, masked + protected, tag v* chroniony)." >&2
+        exit 1
+      fi
+    # Wersja z tagu musi zgadzać się z package.json — inaczej opublikowalibyśmy co innego, niż mówi tag.
+    - test "v$(node -p 'require("./package.json").version')" = "$CI_COMMIT_TAG"
+    # Token tylko w pliku (zmienna rozwijana przez npm), nigdy w logu.
+    - echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
+    - npm publish --provenance=false

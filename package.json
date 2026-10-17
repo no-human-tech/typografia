@@ -1,0 +1,61 @@
+{
+  "name": "@no-human/typografia",
+  "version": "2.0.0",
+  "description": "Polska typografia: twarde spacje po sierotach, przy liczbach z jednostkami, skrótach, inicjałach, datach i półpauzach",
+  "type": "module",
+  "license": "MIT",
+  "author": "NO-HUMAN PSA",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/no-human-tech/typografia.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/**/*.test.*",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@types/node": "22.20.1",
+    "eslint": "9.39.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.0",
+    "vitest": "3.2.7"
+  },
+  "homepage": "https://github.com/no-human-tech/typografia#readme",
+  "bugs": {
+    "url": "https://github.com/no-human-tech/typografia/issues"
+  },
+  "keywords": [
+    "typografia",
+    "polish",
+    "typography",
+    "nbsp",
+    "orphans",
+    "twarde spacje"
+  ]
+}
