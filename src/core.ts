@@ -106,6 +106,9 @@ function bindsBackward(word: string, nextRaw: string, c: Compiled): boolean {
   const next = nextRaw.replace(TRAIL, '');
   if (c.rules.units && ENDS_WITH_DIGIT.test(word)) {
     if (UNITS_SET.has(next) || UNITS_SET.has(stripDot(next))) return true;
+    // Kropka zamykająca zdanie za nawiasem lub cudzysłowem: „kW).”, „kW”.”, „tys.).”.
+    const inner = stripDot(next).replace(TRAIL, '');
+    if (inner !== next && (UNITS_SET.has(inner) || UNITS_SET.has(stripDot(inner)))) return true;
     if (DIGIT_GROUP_HEAD.test(word) && DIGIT_GROUP_TAIL.test(stripDot(next))) return true;
   }
   if (!c.pl) return false;

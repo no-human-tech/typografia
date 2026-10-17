@@ -151,6 +151,13 @@ describe('hardSpaces — lang', () => {
 describe('reguła units', () => {
   const u = (s: string): string => hardSpaces(s, { rules: { units: true } });
 
+  it('wiąże jednostkę przed interpunkcją z kropką na końcu: „kW).”, „kW”.”, „tys.).”', () => {
+    expect(u('(2 × 113 kW).')).toBe(nb('(2~× 113~kW).'));
+    expect(u('„50 kW”.')).toBe(nb('„50~kW”.'));
+    expect(u('(5 tys.).')).toBe(nb('(5~tys.).'));
+    expect(u('ok. 15 %?!')).toBe(nb('ok. 15~%?!'));
+  });
+
   it('wiąże liczbę z jednostką', () => {
     expect(u('moc 50 kW i 190 L')).toBe(nb('moc 50~kW i~190~L'));
     expect(u('kosztuje 1299,99 zł.')).toBe(nb('kosztuje 1299,99~zł.'));

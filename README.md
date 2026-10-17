@@ -116,6 +116,8 @@ zachowania `hardSpaces` lub listy `ORPHANS_PL` to wersja główna.
 
 - **2.0.1** — `exports` z warunkiem `default`: paczkę da się wczytać także przez
   `require()` (Node ≥ 22.12), np. w loaderach testów kompilujących do CommonJS.
+  Reguła `units` wiąże jednostkę także przed kropką za nawiasem lub cudzysłowem
+  („(2 × 113 kW).”, „„50 kW”.”).
 - **2.0.0** — `ORPHANS_PL` rozszerzona z 23 do 46 słów (pod, nad, przy, przez,
   albo, to, co, jak, się, ani, są, jest, aby, już, też, tam, tu, aż, bo, no,
   niż, gdy, iż). Domyślne `hardSpaces` wiąże więcej, stąd wersja główna.
