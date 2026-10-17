@@ -109,8 +109,17 @@ Wydanie: podbij `version` w `package.json`, commit na `main`, tag `vX.Y.Z`
 (musi równać się wersji). Potok tagu ma ręczny job `publikacja`
 (`npm publish` do npmjs.com) z tokenem `NPM_TOKEN` — zmienna projektu
 *masked* + *protected* (tagi `v*` muszą być chronione). Bez niej job pada
-z czytelnym komunikatem. Wersjonowanie semantyczne: zmiana domyślnego
-zachowania `hardSpaces` lub listy `ORPHANS_PL` to wersja główna.
+z czytelnym komunikatem.
+
+## Wersjonowanie
+
+Wersjonowanie semantyczne: zmiana domyślnego zachowania `hardSpaces` lub
+listy `ORPHANS_PL` to wersja główna. Jeśli twarde spacje powstają przy
+renderze, nowa wersja działa od razu po jej podniesieniu. Jeśli projekt
+zapisuje je w plikach (skrypt przepuszczający słowniki lub dane), po
+podniesieniu wersji trzeba ponownie przepuścić teksty i zacommitować wynik.
+Pilnuje tego test porównujący zapis z paczką:
+`hardSpaces(tekst.replaceAll(NBSP, ' '), opcje) === tekst`.
 
 ## Zmiany
 
