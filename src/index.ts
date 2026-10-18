@@ -2,12 +2,13 @@ import { bindText, compile, orphansIn, type HardSpacesOptions, type Lang } from 
 
 export { NBSP, ORPHAN_RE } from './core.js';
 export type { HardSpacesOptions, HardSpacesRules, Lang } from './core.js';
-export { ABBREVIATIONS_PL, LEGAL_PL, MONTHS_PL, ORPHANS_PL, UNITS } from './lists.js';
+export { ABBREVIATIONS_PL, DEFAULT_ABBREVIATIONS_PL, LEGAL_PL, MONTHS_PL, ORPHANS_PL, UNITS } from './lists.js';
 export { hardSpacesHtml } from './html.js';
 
 /**
  * Twarde spacje w tekście. Domyślnie (`lang: 'pl'`, bez reguł) wiąże tylko
- * słowa z `ORPHANS_PL` z następnym wyrazem. Idempotentna.
+ * słowa z `ORPHANS_PL` i skróty z `DEFAULT_ABBREVIATIONS_PL` (nr, np., ok.)
+ * z następnym wyrazem. Idempotentna.
  */
 export function hardSpaces(text: string, opts?: HardSpacesOptions): string {
   return bindText(text, compile(opts), false);

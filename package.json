@@ -1,6 +1,6 @@
 {
   "name": "@no-human/typografia",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "Polska typografia: twarde spacje po sierotach, przy liczbach z jednostkami, skrótach, inicjałach, datach i półpauzach",
   "type": "module",
   "license": "MIT",

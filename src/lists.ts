@@ -19,6 +19,14 @@ export const ORPHANS_PL: readonly string[] = Object.freeze([
 ]);
 
 /**
+ * Skróty wiązane z następnym wyrazem domyślnie (`lang: 'pl'`, bez reguł),
+ * obok `ORPHANS_PL`. Podzbiór `ABBREVIATIONS_PL` — dopasowanie jak w regule
+ * `abbreviations`: bez względu na wielkość liter, forma dokładna („np” bez
+ * kropki nie jest skrótem).
+ */
+export const DEFAULT_ABBREVIATIONS_PL: readonly string[] = Object.freeze(['nr', 'np.', 'ok.']);
+
+/**
  * Jednostki i mnożniki wiązane z poprzedzającą liczbą (reguła `units`).
  * Wielkość liter ma znaczenie. Kropka końcowa zdania jest dopuszczalna
  * („5 kg.”), więc skróty z kropką występują tu z nią („tys.”, „szt.”).
