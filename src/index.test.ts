@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ABBREVIATIONS_PL,
+  DEFAULT_ABBREVIATIONS_PL,
   LEGAL_PL,
   MONTHS_PL,
   NBSP,
@@ -10,6 +11,7 @@ import {
   findOrphans,
   hardSpaces,
   hardSpacesDeep,
+  hardSpacesHtml,
   typeset,
   type HardSpacesOptions,
 } from './index.js';
@@ -43,12 +45,18 @@ describe('stałe', () => {
     expect(hardSpaces('Pliki się zapisują przez API')).toBe(nb('Pliki się~zapisują przez~API'));
   });
 
-  it('skróty z kropką nie są na liście — obsługuje je reguła abbreviations', () => {
-    expect(hardSpaces('np. tak')).toBe('np. tak');
+  it('DEFAULT_ABBREVIATIONS_PL: nr, np., ok. — podzbiór ABBREVIATIONS_PL', () => {
+    expect([...DEFAULT_ABBREVIATIONS_PL]).toEqual(['nr', 'np.', 'ok.']);
+    for (const w of DEFAULT_ABBREVIATIONS_PL) expect(ABBREVIATIONS_PL).toContain(w);
+  });
+
+  it('pozostałe skróty z kropką domyślnie bez zmian — obsługuje je reguła abbreviations', () => {
+    const s = 'tj. tak, tzw. coś, ul. Długa, m.in. to';
+    expect(hardSpaces(s)).toBe(s);
   });
 
   it('listy są zamrożone', () => {
-    for (const list of [ORPHANS_PL, UNITS, ABBREVIATIONS_PL, LEGAL_PL, MONTHS_PL]) {
+    for (const list of [ORPHANS_PL, DEFAULT_ABBREVIATIONS_PL, UNITS, ABBREVIATIONS_PL, LEGAL_PL, MONTHS_PL]) {
       expect(Object.isFrozen(list)).toBe(true);
     }
   });
@@ -118,9 +126,9 @@ describe('hardSpaces — sieroty (domyślnie)', () => {
     expect(hardSpaces('www.w.pl i https://a.pl/z w')).toBe(nb('www.w.pl i~https://a.pl/z w'));
   });
 
-  it('domyślnie nie stosuje żadnych reguł poza listą słów', () => {
+  it('domyślnie nie stosuje żadnych reguł poza listą słów i skrótami domyślnymi', () => {
     const s = 'Ok. 50 kW, art. 5, J. Kowalski, 17 maja 2026 r. — koniec';
-    expect(hardSpaces(s)).toBe(s);
+    expect(hardSpaces(s)).toBe(nb('Ok.~50 kW, art. 5, J. Kowalski, 17 maja 2026 r. — koniec'));
   });
 
   it('extraWords dokłada słowa (bez względu na wielkość liter)', () => {
@@ -129,6 +137,53 @@ describe('hardSpaces — sieroty (domyślnie)', () => {
 
   it('zachowuje pusty tekst', () => {
     expect(hardSpaces('')).toBe('');
+  });
+});
+
+describe('hardSpaces — skróty domyślne (nr, np., ok.)', () => {
+  it.each(DEFAULT_ABBREVIATIONS_PL.map((w) => [w]))('wiąże „%s” z następnym wyrazem bez opcji', (word) => {
+    expect(hardSpaces(`tekst ${word} dalej`)).toBe(`tekst ${word}${NBSP}dalej`);
+  });
+
+  it('bez względu na wielkość liter, na początku zdania i po interpunkcji otwierającej', () => {
+    expect(hardSpaces('Nr 5, NP. tak, Ok. 20 osób')).toBe(nb('Nr~5, NP.~tak, Ok.~20 osób'));
+    expect(hardSpaces('Koniec. Np. tak')).toBe(nb('Koniec. Np.~tak'));
+    expect(hardSpaces('(np. tak) „nr 5”')).toBe(nb('(np.~tak) „nr~5”'));
+  });
+
+  it('wymaga dokładnej formy: „np”, „ok” bez kropki i „nr.” z kropką bez zmian', () => {
+    expect(hardSpaces('np tak, ok tak, nr. 5')).toBe('np tak, ok tak, nr. 5');
+    expect(hardSpaces('np., tak')).toBe('np., tak');
+  });
+
+  it('w ciągu z sierotami', () => {
+    expect(hardSpaces('faktura nr 5 i ok. 3 dni')).toBe(nb('faktura nr~5 i~ok.~3 dni'));
+  });
+
+  it('angielski bez zmian', () => {
+    expect(hardSpaces('nr 5, np. this, ok. fine', { lang: 'en' })).toBe('nr 5, np. this, ok. fine');
+  });
+
+  it('abbreviations: true nadal wiąże wszystkie skróty, jedną twardą spacją', () => {
+    expect(hardSpaces('nr 5, np. tak, ok. 3, tj. to, wg mnie', { rules: { abbreviations: true } })).toBe(
+      nb('nr~5, np.~tak, ok.~3, tj.~to, wg~mnie'),
+    );
+    for (const w of ABBREVIATIONS_PL) {
+      expect(hardSpaces(`${w} x`, { rules: { abbreviations: true } })).toBe(`${w}${NBSP}x`);
+    }
+  });
+
+  it('idempotentne', () => {
+    const once = hardSpaces('nr 5 np. tak ok. 3');
+    expect(once).toBe(nb('nr~5 np.~tak ok.~3'));
+    expect(hardSpaces(once)).toBe(once);
+  });
+
+  it('dziedziczą typeset, hardSpacesDeep i hardSpacesHtml', () => {
+    expect(typeset('nr 5 — np. tak')).toBe(nb('nr~5~— np.~tak'));
+    expect(typeset('nr 5', 'en')).toBe('nr 5');
+    expect(hardSpacesDeep({ a: ['ok. 5 dni'] })).toEqual({ a: [nb('ok.~5 dni')] });
+    expect(hardSpacesHtml('<p>nr 5, <b>np. tak</b></p>')).toBe(nb('<p>nr~5, <b>np.~tak</b></p>'));
   });
 });
 
@@ -155,7 +210,7 @@ describe('reguła units', () => {
     expect(u('(2 × 113 kW).')).toBe(nb('(2~× 113~kW).'));
     expect(u('„50 kW”.')).toBe(nb('„50~kW”.'));
     expect(u('(5 tys.).')).toBe(nb('(5~tys.).'));
-    expect(u('ok. 15 %?!')).toBe(nb('ok. 15~%?!'));
+    expect(u('ok. 15 %?!')).toBe(nb('ok.~15~%?!'));
   });
 
   it('wiąże liczbę z jednostką', () => {
@@ -314,6 +369,21 @@ describe('findOrphans / ORPHAN_RE', () => {
   it('bierze pod uwagę extraWords i lang', () => {
     expect(findOrphans('jak to', { extraWords: ['jak'] })).toEqual(['jak']);
     expect(findOrphans('a cat', { lang: 'en' })).toEqual([]);
+  });
+
+  it('wykrywa niezwiązane skróty domyślne (nr, np., ok.)', () => {
+    expect(findOrphans('faktura nr 5, Np. tak, ok. 3, tj. to')).toEqual(['nr', 'Np.', 'ok.']);
+    expect(findOrphans(hardSpaces('faktura nr 5, Np. tak, ok. 3'))).toEqual([]);
+    expect(findOrphans('nr 5', { lang: 'en' })).toEqual([]);
+  });
+
+  it('ORPHAN_RE wykrywa skróty domyślne, ale nie formy bez kropki', () => {
+    expect(ORPHAN_RE.test('faktura nr 5')).toBe(true);
+    expect(ORPHAN_RE.test('Np. tak')).toBe(true);
+    expect(ORPHAN_RE.test('(ok. 3)')).toBe(true);
+    expect(ORPHAN_RE.test(hardSpaces('faktura nr 5, np. tak, ok. 3'))).toBe(false);
+    expect(ORPHAN_RE.test('np tak')).toBe(false);
+    expect(ORPHAN_RE.test('dnp. tak')).toBe(false);
   });
 
   it('ORPHAN_RE wykrywa słowo z ORPHANS_PL przed zwykłą spacją', () => {

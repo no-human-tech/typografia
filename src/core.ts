@@ -1,4 +1,4 @@
-import { ABBREVIATIONS_PL, LEGAL_PL, MONTHS_PL, ORPHANS_PL, UNITS } from './lists.js';
+import { ABBREVIATIONS_PL, DEFAULT_ABBREVIATIONS_PL, LEGAL_PL, MONTHS_PL, ORPHANS_PL, UNITS } from './lists.js';
 
 /** Twarda spacja U+00A0. Zawsze jako escape — literal jest niewidoczny w diffie. */
 export const NBSP = '\u00A0';
@@ -11,7 +11,7 @@ export interface HardSpacesRules {
   units?: boolean;
   /** Przepisy: „art. 5”, „§ 3”, „ust. 2”, „pkt 1”, „lit. a”. Tylko `pl`. */
   legal?: boolean;
-  /** Skróty: „np. tak”, „nr 5”, „ul. Długa”, „dr Nowak” oraz „2026 r.”, „XIX w.”. Tylko `pl`. */
+  /** Wszystkie skróty z `ABBREVIATIONS_PL` (domyślnie tylko `DEFAULT_ABBREVIATIONS_PL`): „np. tak”, „nr 5”, „ul. Długa”, „dr Nowak” oraz „2026 r.”, „XIX w.”. Tylko `pl`. */
   abbreviations?: boolean;
   /** Inicjały: „J. Kowalski”, „J.R.R. Tolkien”. Każdy język. */
   initials?: boolean;
@@ -22,7 +22,7 @@ export interface HardSpacesRules {
 }
 
 export interface HardSpacesOptions {
-  /** `pl` (domyślnie) — lista `ORPHANS_PL`; `en` — bez listy (tylko `extraWords`) i bez reguł polskich. */
+  /** `pl` (domyślnie) — `ORPHANS_PL` i `DEFAULT_ABBREVIATIONS_PL`; `en` — bez list (tylko `extraWords`) i bez reguł polskich. */
   lang?: Lang;
   /** Słowa dokładane do listy sierot (porównanie bez względu na wielkość liter). */
   extraWords?: readonly string[];
@@ -32,6 +32,8 @@ export interface HardSpacesOptions {
 interface Compiled {
   pl: boolean;
   words: ReadonlySet<string>;
+  /** Skróty wiązane z następnym wyrazem: domyślne, wszystkie (reguła `abbreviations`) albo żadne (`en`). */
+  abbreviations: ReadonlySet<string>;
   rules: Required<HardSpacesRules>;
 }
 
@@ -41,6 +43,7 @@ const ORPHANS_SET = lower(ORPHANS_PL);
 const EMPTY_SET: ReadonlySet<string> = new Set();
 const UNITS_SET: ReadonlySet<string> = new Set(UNITS);
 const ABBREVIATIONS_SET = lower(ABBREVIATIONS_PL);
+const DEFAULT_ABBREVIATIONS_SET = lower(DEFAULT_ABBREVIATIONS_PL);
 const LEGAL_SET = lower(LEGAL_PL);
 const MONTHS_SET = lower(MONTHS_PL);
 
@@ -50,9 +53,11 @@ export function compile(opts: HardSpacesOptions | undefined): Compiled {
   const extra = opts?.extraWords ?? [];
   const words = extra.length === 0 ? base : new Set([...base, ...extra.map((w) => w.toLowerCase())]);
   const r = opts?.rules ?? {};
+  const abbreviations = !pl ? EMPTY_SET : (r.abbreviations ?? false) ? ABBREVIATIONS_SET : DEFAULT_ABBREVIATIONS_SET;
   return {
     pl,
     words,
+    abbreviations,
     rules: {
       units: r.units ?? false,
       legal: r.legal ?? false,
@@ -96,7 +101,7 @@ function stripDot(s: string): string {
 function bindsForward(word: string, c: Compiled): boolean {
   const w = word.toLowerCase();
   if (c.words.has(w)) return true;
-  if (c.pl && c.rules.abbreviations && ABBREVIATIONS_SET.has(w)) return true;
+  if (c.abbreviations.has(w)) return true;
   if (c.pl && c.rules.legal && LEGAL_SET.has(w)) return true;
   return c.rules.initials && INITIALS.test(word);
 }
@@ -134,14 +139,15 @@ export function bindText(text: string, c: Compiled, html: boolean): string {
   return parts.join('');
 }
 
-/** Wyrazy z listy, po których stoi zwykła spacja i dalszy tekst. */
+/** Wyrazy z listy sierot lub skróty domyślne, po których stoi zwykła spacja i dalszy tekst. */
 export function orphansIn(text: string, c: Compiled): string[] {
   const parts = text.split(PLAIN_SEP);
   const found: string[] = [];
   for (let i = 1; i < parts.length - 1; i += 2) {
     if (parts[i] !== ' ' || (parts[i + 1] ?? '') === '') continue;
     const prev = (parts[i - 1] ?? '').replace(LEAD, '');
-    if (prev !== '' && c.words.has(prev.toLowerCase())) found.push(prev);
+    const w = prev.toLowerCase();
+    if (prev !== '' && (c.words.has(w) || (c.pl && DEFAULT_ABBREVIATIONS_SET.has(w)))) found.push(prev);
   }
   return found;
 }
@@ -149,10 +155,10 @@ export function orphansIn(text: string, c: Compiled): string[] {
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
- * Wykrywa słowo z `ORPHANS_PL` przed zwykłą spacją (do testów E2E). Bez
+ * Wykrywa słowo z `ORPHANS_PL` lub `DEFAULT_ABBREVIATIONS_PL` przed zwykłą spacją (do testów E2E). Bez
  * lookbehind i bez flagi `g` (bezpieczne w `test()` wielokrotnie).
  */
 export const ORPHAN_RE = new RegExp(
-  `(?:^|[\\s(„"'»«“‘[{–—-])(?:${[...ORPHANS_PL].sort((a, b) => b.length - a.length).map(escapeRe).join('|')}) (?=\\S)`,
+  `(?:^|[\\s(„"'»«“‘[{–—-])(?:${[...ORPHANS_PL, ...DEFAULT_ABBREVIATIONS_PL].sort((a, b) => b.length - a.length).map(escapeRe).join('|')}) (?=\\S)`,
   'iu',
 );
