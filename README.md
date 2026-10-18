@@ -69,6 +69,14 @@ interpunkcji otwierającej, tylko w dokładnej formie („np” bez kropki,
 „nr.” i „np.,” zostają). Reguła `abbreviations` dokłada pozostałe skróty
 z `ABBREVIATIONS_PL` oraz „2026 r.” i „XIX w.”.
 
+Dwie konsekwencje dokładnego dopasowania:
+
+- „ok.” na końcu zdania też jest wiązane, więc „Wszystko ok. Dalej…” daje
+  twardą spację między zdaniami (najwyżej inne łamanie wiersza; `findOrphans`
+  zgłasza taki „ok.” przed zwykłą spacją).
+- `rules: { abbreviations: false }` nie wyłącza skrótów domyślnych — wyłącza
+  tylko pozostałe pozycje `ABBREVIATIONS_PL`.
+
 **Angielski.** `lang: 'en'` wyłącza listy `ORPHANS_PL`, `DEFAULT_ABBREVIATIONS_PL` i reguły polskie
 (`legal`, `abbreviations`, `dates`) — w angielskim „a” i „I” kończą wiersze
 i wiązanie ich byłoby błędem. Reguły niezależne od języka (`units`,
